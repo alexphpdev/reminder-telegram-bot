@@ -1,0 +1,25 @@
+# Local development entrypoint (http://localhost:8080).
+:80 {
+
+    # Serve Laravel public directory
+    root * /var/www/public
+
+    # PHP-FPM via FastCGI
+    php_fastcgi app:9000
+
+    # Static files
+    file_server
+
+    # Basic security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+
+    # Logs to stdout in JSON (nice for Docker logs)
+    log {
+        output stdout
+        format json
+    }
+}

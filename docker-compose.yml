@@ -1,0 +1,72 @@
+services:
+  reminder-telegram-bot:
+    image: caddy:2-alpine
+    container_name: reminder-telegram-bot-web
+    restart: unless-stopped
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./laravel:/var/www:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - app-net
+      - proxy-net
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: app-php
+    restart: unless-stopped
+#    environment:
+#      APP_URL: http://localhost:8080
+
+#      DB_CONNECTION: sqlite
+    volumes:
+      - ./laravel:/var/www
+    networks:
+      - app-net
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: app-scheduler
+    restart: unless-stopped
+#    environment:
+#      APP_URL: http://localhost:8080
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./laravel:/var/www
+    depends_on:
+      - app
+    networks:
+      - app-net
+
+  poller:
+    profiles: ["polling"]
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: app-poller
+    restart: unless-stopped
+#    environment:
+#      APP_URL: http://localhost:8080
+    command: ["sh", "-lc", "php artisan telegram:poll-updates --take-over --timeout=${TELEGRAM_POLLING_TIMEOUT:-30}"]
+    volumes:
+      - ./laravel:/var/www
+    depends_on:
+      - app
+    networks:
+      - app-net
+
+networks:
+  app-net:
+  proxy-net:
+    name: shared-reverse-proxy
+
+volumes:
+  caddy_data:
+  caddy_config:
