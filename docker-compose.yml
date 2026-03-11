@@ -1,9 +1,6 @@
 x-php-build: &php-build
   context: .
   dockerfile: docker/php/Dockerfile
-  args:
-    HOST_UID: ${HOST_UID:-1000}
-    HOST_GID: ${HOST_GID:-1000}
 
 services:
   reminder-telegram-bot:
@@ -25,6 +22,7 @@ services:
     build: *php-build
     container_name: app-php
     restart: unless-stopped
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - ./laravel:/var/www
       - ./database:/var/lib/reminder-bot/sqlite
@@ -35,6 +33,7 @@ services:
     build: *php-build
     container_name: app-scheduler
     restart: unless-stopped
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     command: ["php", "artisan", "schedule:work"]
     volumes:
       - ./laravel:/var/www
@@ -49,6 +48,7 @@ services:
     build: *php-build
     container_name: app-poller
     restart: unless-stopped
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     command: ["sh", "-lc", "php artisan telegram:poll-updates --take-over --timeout=${TELEGRAM_POLLING_TIMEOUT:-30}"]
     volumes:
       - ./laravel:/var/www
