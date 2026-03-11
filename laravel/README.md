@@ -19,6 +19,9 @@ Add these values to `.env`:
 APP_URL=https://your-public-domain.example
 APP_TIMEZONE=UTC
 
+DB_CONNECTION=sqlite
+DB_DATABASE=/var/lib/reminder-bot/sqlite/database.sqlite
+
 TELEGRAM_BOT_TOKEN=123456:abc
 TELEGRAM_WEBHOOK_SECRET=some-random-secret
 TELEGRAM_WEBHOOK_URL=https://your-public-domain.example/api/telegram/webhook
@@ -37,6 +40,23 @@ Start or rebuild containers:
 docker compose up -d --build
 ```
 
+SQLite data is stored in repo-root `./database` and is mounted inside containers at
+`/var/lib/reminder-bot/sqlite/database.sqlite`.
+This keeps the DB outside the Laravel source tree while still visible on the host.
+Create host directory `./database` and prepare file permissions yourself before first start.
+
+Example host preparation:
+
+```bash
+mkdir -p database
+chmod 775 database
+touch database/database.sqlite
+chmod 664 database/database.sqlite
+```
+
+PHP containers run as `www-data`, so host ownership/permissions must allow that user to write the bind-mounted DB directory and file.
+If you already have data in legacy `laravel/database/database.sqlite`, move or copy it manually into `./database/database.sqlite` before rebuilding containers.
+
 Run migrations:
 
 ```bash
@@ -50,6 +70,12 @@ docker exec app-php php artisan telegram:set-webhook
 ```
 
 Telegram requires a public HTTPS URL. `http://localhost:8080` is not enough for real webhook delivery.
+
+To inspect SQLite directly inside Docker:
+
+```bash
+docker exec -it app-php sqlite3 /var/lib/reminder-bot/sqlite/database.sqlite
+```
 
 ## Webhook vs polling
 

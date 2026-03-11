@@ -20,12 +20,9 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: app-php
     restart: unless-stopped
-#    environment:
-#      APP_URL: http://localhost:8080
-
-#      DB_CONNECTION: sqlite
     volumes:
       - ./laravel:/var/www
+      - ./database:/var/lib/reminder-bot/sqlite
     networks:
       - app-net
 
@@ -35,11 +32,10 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: app-scheduler
     restart: unless-stopped
-#    environment:
-#      APP_URL: http://localhost:8080
     command: ["php", "artisan", "schedule:work"]
     volumes:
       - ./laravel:/var/www
+      - ./database:/var/lib/reminder-bot/sqlite
     depends_on:
       - app
     networks:
@@ -52,11 +48,10 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: app-poller
     restart: unless-stopped
-#    environment:
-#      APP_URL: http://localhost:8080
     command: ["sh", "-lc", "php artisan telegram:poll-updates --take-over --timeout=${TELEGRAM_POLLING_TIMEOUT:-30}"]
     volumes:
       - ./laravel:/var/www
+      - ./database:/var/lib/reminder-bot/sqlite
     depends_on:
       - app
     networks:
