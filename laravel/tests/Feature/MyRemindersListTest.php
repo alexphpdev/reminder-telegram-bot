@@ -61,7 +61,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Buy milk',
             'message' => 'Buy milk',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -72,7 +71,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Water flowers',
             'message' => 'Water flowers',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -83,7 +81,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Past task',
             'message' => 'Past task',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -94,7 +91,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Other user task',
             'message' => 'Other user task',
             'chat_id' => $chat->id,
             'user_id' => $otherUser->id,
@@ -180,7 +176,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'English',
             'message' => 'English class',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -258,7 +253,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Kyiv time test',
             'message' => 'Kyiv time test',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -390,7 +384,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Practice English',
             'message' => 'Practice English',
             'user_id' => $user->id,
             'status' => Reminder::STATUS_ACTIVE,
@@ -476,7 +469,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'Water flowers',
             'message' => 'Water flowers',
             'user_id' => $user->id,
             'status' => Reminder::STATUS_ACTIVE,
@@ -553,7 +545,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Water flowers',
             'message' => 'Water flowers',
             'user_id' => $user->id,
             'status' => Reminder::STATUS_ACTIVE,
@@ -629,7 +620,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Pay internet',
             'message' => 'Pay internet',
             'user_id' => $user->id,
             'status' => Reminder::STATUS_ACTIVE,
@@ -706,7 +696,6 @@ class MyRemindersListTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Pay rent',
             'message' => 'Pay rent',
             'user_id' => $user->id,
             'status' => Reminder::STATUS_ACTIVE,

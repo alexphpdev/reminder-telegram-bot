@@ -173,7 +173,6 @@ class TelegramWebhookTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'English class',
             'message' => 'Пора на английский',
             'chat_id' => $chat->id,
             'user_id' => $owner->id,
@@ -273,7 +272,6 @@ class TelegramWebhookTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Water flowers',
             'message' => 'Полить цветы',
             'chat_id' => $chat->id,
             'user_id' => $owner->id,

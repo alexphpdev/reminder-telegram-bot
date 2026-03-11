@@ -1,3 +1,10 @@
+x-php-build: &php-build
+  context: .
+  dockerfile: docker/php/Dockerfile
+  args:
+    HOST_UID: ${HOST_UID:-1000}
+    HOST_GID: ${HOST_GID:-1000}
+
 services:
   reminder-telegram-bot:
     image: caddy:2-alpine
@@ -15,9 +22,7 @@ services:
       - proxy-net
 
   app:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+    build: *php-build
     container_name: app-php
     restart: unless-stopped
     volumes:
@@ -27,9 +32,7 @@ services:
       - app-net
 
   scheduler:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+    build: *php-build
     container_name: app-scheduler
     restart: unless-stopped
     command: ["php", "artisan", "schedule:work"]
@@ -43,9 +46,7 @@ services:
 
   poller:
     profiles: ["polling"]
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+    build: *php-build
     container_name: app-poller
     restart: unless-stopped
     command: ["sh", "-lc", "php artisan telegram:poll-updates --take-over --timeout=${TELEGRAM_POLLING_TIMEOUT:-30}"]

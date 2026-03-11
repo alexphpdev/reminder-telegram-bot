@@ -43,7 +43,6 @@ class RemindersDispatchDueCommandTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Move alarm clock',
             'message' => 'Пора переставить будильник на послезавтра.',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -87,6 +86,111 @@ class RemindersDispatchDueCommandTest extends TestCase
         $this->assertNull($delivery->error_message);
     }
 
+    public function test_it_stores_interval_schedule_timestamps_in_app_timezone(): void
+    {
+        config()->set('app.timezone', 'UTC');
+        config()->set('services.telegram.bot_token', 'test-token');
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => 779,
+                ],
+            ]),
+        ]);
+
+        $dueAt = Carbon::create(2026, 3, 7, 8, 0, 0, 'UTC');
+        $this->travelTo($dueAt);
+
+        $chat = TelegramChat::query()->create([
+            'telegram_chat_id' => -1001234567890,
+            'type' => 'supergroup',
+            'title' => 'Family',
+            'is_primary' => true,
+        ]);
+
+        $user = TelegramUser::query()->create([
+            'telegram_user_id' => 321654,
+            'username' => 'child',
+            'first_name' => 'Child',
+        ]);
+
+        $reminder = Reminder::query()->create([
+            'message' => 'Пора на тренировку.',
+            'chat_id' => $chat->id,
+            'user_id' => $user->id,
+            'status' => Reminder::STATUS_ACTIVE,
+            'schedule_type' => Reminder::SCHEDULE_INTERVAL,
+            'interval_minutes' => 1440,
+            'timezone' => 'Europe/Berlin',
+            'next_run_at' => $dueAt,
+            'ask_status' => false,
+        ]);
+
+        $this->artisan('reminders:dispatch-due')->assertSuccessful();
+
+        $reminder->refresh();
+
+        $this->assertTrue($reminder->last_sent_at->equalTo($dueAt));
+        $this->assertSame('UTC', $reminder->last_sent_at->getTimezone()->getName());
+        $this->assertTrue($reminder->next_run_at->equalTo(Carbon::create(2026, 3, 8, 8, 0, 0, 'UTC')));
+        $this->assertSame('UTC', $reminder->next_run_at->getTimezone()->getName());
+    }
+
+    public function test_it_stores_cron_next_run_in_app_timezone_while_evaluating_cron_in_reminder_timezone(): void
+    {
+        config()->set('app.timezone', 'UTC');
+        config()->set('services.telegram.bot_token', 'test-token');
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => 780,
+                ],
+            ]),
+        ]);
+
+        $dueAt = Carbon::create(2026, 3, 7, 8, 0, 0, 'UTC');
+        $this->travelTo($dueAt);
+
+        $chat = TelegramChat::query()->create([
+            'telegram_chat_id' => -1001234567890,
+            'type' => 'supergroup',
+            'title' => 'Family',
+            'is_primary' => true,
+        ]);
+
+        $user = TelegramUser::query()->create([
+            'telegram_user_id' => 321654,
+            'username' => 'child',
+            'first_name' => 'Child',
+        ]);
+
+        $reminder = Reminder::query()->create([
+            'message' => 'Пора на зарядку.',
+            'chat_id' => $chat->id,
+            'user_id' => $user->id,
+            'status' => Reminder::STATUS_ACTIVE,
+            'schedule_type' => Reminder::SCHEDULE_CRON,
+            'cron_expression' => '0 9 * * *',
+            'timezone' => 'Europe/Berlin',
+            'next_run_at' => $dueAt,
+            'ask_status' => false,
+        ]);
+
+        $this->artisan('reminders:dispatch-due')->assertSuccessful();
+
+        $reminder->refresh();
+
+        $this->assertSame('0 9 * * *', $reminder->cron_expression);
+        $this->assertTrue($reminder->last_sent_at->equalTo($dueAt));
+        $this->assertSame('UTC', $reminder->last_sent_at->getTimezone()->getName());
+        $this->assertTrue($reminder->next_run_at->equalTo(Carbon::create(2026, 3, 8, 8, 0, 0, 'UTC')));
+        $this->assertSame('UTC', $reminder->next_run_at->getTimezone()->getName());
+    }
+
     public function test_it_prefers_pseudonym_for_generated_user_mentions(): void
     {
         config()->set('services.telegram.bot_token', 'test-token');
@@ -115,7 +219,6 @@ class RemindersDispatchDueCommandTest extends TestCase
         ]);
 
         Reminder::query()->create([
-            'title' => 'English class',
             'message' => 'Пора на английский',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -188,7 +291,6 @@ class RemindersDispatchDueCommandTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Move alarm clock',
             'message' => 'Пора переставить будильник на послезавтра.',
             'chat_id' => $chat->id,
             'user_id' => $user->id,
@@ -292,7 +394,6 @@ class RemindersDispatchDueCommandTest extends TestCase
         ]);
 
         $reminder = Reminder::query()->create([
-            'title' => 'Move alarm clock',
             'message' => 'Пора переставить будильник на послезавтра.',
             'chat_id' => $chat->id,
             'user_id' => $user->id,

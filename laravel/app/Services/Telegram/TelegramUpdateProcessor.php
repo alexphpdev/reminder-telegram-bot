@@ -1673,7 +1673,6 @@ class TelegramUpdateProcessor
         $nextRunAt = $scheduledAt->setTimezone((string) config('app.timezone'));
 
         return Reminder::query()->create([
-            'title' => Str::limit($text, 60),
             'message' => $text,
             'chat_id' => $draft->chat_id,
             'user_id' => $draft->target_user_id,

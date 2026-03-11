@@ -21,7 +21,7 @@ class ReminderDispatcher
 
     public function dispatchDueReminders(?Carbon $now = null): int
     {
-        $currentTime = CarbonImmutable::instance($now ?? now());
+        $currentTime = $this->toAppTimezone(CarbonImmutable::instance($now ?? now()));
         $processed = $this->dispatchExpiredStatusDeliveries($currentTime);
 
         $reminders = Reminder::query()
@@ -114,12 +114,12 @@ class ReminderDispatcher
             'delivery_status' => ReminderDelivery::STATUS_SENT,
             'telegram_message_id' => data_get($response, 'result.message_id'),
             'response_payload' => $response,
-            'sent_at' => $now,
+            'sent_at' => $this->toAppTimezone($now),
         ])->save();
 
         if ($dispatchingSnooze) {
             $reminder->forceFill([
-                'last_sent_at' => $now,
+                'last_sent_at' => $this->toAppTimezone($now),
                 'snooze_until' => null,
                 'status' => $reminder->next_run_at === null ? Reminder::STATUS_COMPLETED : Reminder::STATUS_ACTIVE,
             ])->save();
@@ -127,7 +127,7 @@ class ReminderDispatcher
             $nextRunAt = $this->calculateNextRunAt($reminder, $now);
 
             $reminder->forceFill([
-                'last_sent_at' => $now,
+                'last_sent_at' => $this->toAppTimezone($now),
                 'next_run_at' => $nextRunAt,
                 'snooze_until' => null,
                 'status' => $nextRunAt === null ? Reminder::STATUS_COMPLETED : $reminder->status,
@@ -178,11 +178,11 @@ class ReminderDispatcher
             'delivery_status' => ReminderDelivery::STATUS_SENT,
             'telegram_message_id' => data_get($response, 'result.message_id'),
             'response_payload' => $response,
-            'sent_at' => $now,
+            'sent_at' => $this->toAppTimezone($now),
         ])->save();
 
         $expirationMeta = [
-            'expired_at' => $now->toIso8601String(),
+            'expired_at' => $this->toAppTimezone($now)->toIso8601String(),
             'replaced_by_delivery_id' => $replacementDelivery->id,
         ];
 
@@ -279,7 +279,7 @@ class ReminderDispatcher
 
     private function calculateNextRunAt(Reminder $reminder, CarbonImmutable $now): ?CarbonImmutable
     {
-        $timezone = $reminder->timezone ?: config('app.timezone');
+        $timezone = $this->reminderTimezone($reminder);
         $currentDueTime = CarbonImmutable::instance($reminder->next_run_at ?? $now)->setTimezone($timezone);
         $referenceNow = $now->setTimezone($timezone);
 
@@ -298,7 +298,7 @@ class ReminderDispatcher
             return null;
         }
 
-        return $nextRunAt;
+        return $this->toAppTimezone($nextRunAt);
     }
 
     private function nextIntervalRun(Reminder $reminder, CarbonImmutable $currentDueTime, CarbonImmutable $referenceNow): ?CarbonImmutable
@@ -323,7 +323,7 @@ class ReminderDispatcher
         }
 
         $cronExpression = new CronExpression($reminder->cron_expression);
-        $timezone = $reminder->timezone ?: config('app.timezone');
+        $timezone = $this->reminderTimezone($reminder);
 
         $nextRunAt = CarbonImmutable::instance(
             $cronExpression->getNextRunDate($currentDueTime, 0, false, $timezone),
@@ -379,6 +379,23 @@ class ReminderDispatcher
         }
 
         return $timeout;
+    }
+
+    private function reminderTimezone(Reminder $reminder): string
+    {
+        $timezone = trim((string) $reminder->timezone);
+
+        return $timezone !== '' ? $timezone : $this->appTimezone();
+    }
+
+    private function toAppTimezone(CarbonImmutable $value): CarbonImmutable
+    {
+        return $value->setTimezone($this->appTimezone());
+    }
+
+    private function appTimezone(): string
+    {
+        return (string) config('app.timezone');
     }
 
     private function tr(string $key, array $replace = []): string
