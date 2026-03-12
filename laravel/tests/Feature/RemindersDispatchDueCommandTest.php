@@ -86,6 +86,64 @@ class RemindersDispatchDueCommandTest extends TestCase
         $this->assertNull($delivery->error_message);
     }
 
+    public function test_it_completes_one_time_reminder_after_first_dispatch(): void
+    {
+        config()->set('services.telegram.bot_token', 'test-token');
+
+        Http::fake([
+            'https://api.telegram.org/*' => Http::response([
+                'ok' => true,
+                'result' => [
+                    'message_id' => 781,
+                ],
+            ]),
+        ]);
+
+        $chat = TelegramChat::query()->create([
+            'telegram_chat_id' => -1001234567890,
+            'type' => 'supergroup',
+            'title' => 'Family',
+            'is_primary' => true,
+        ]);
+
+        $user = TelegramUser::query()->create([
+            'telegram_user_id' => 321654,
+            'username' => 'child',
+            'first_name' => 'Child',
+        ]);
+
+        $reminder = Reminder::query()->create([
+            'message' => 'Пора закрыть окно.',
+            'chat_id' => $chat->id,
+            'user_id' => $user->id,
+            'status' => Reminder::STATUS_ACTIVE,
+            'schedule_type' => Reminder::SCHEDULE_ONCE,
+            'timezone' => 'Europe/Berlin',
+            'next_run_at' => now()->subMinute(),
+            'ask_status' => false,
+        ]);
+
+        $this->artisan('reminders:dispatch-due')->assertSuccessful();
+        $this->artisan('reminders:dispatch-due')->assertSuccessful();
+
+        $reminder->refresh();
+
+        $this->assertNotNull($reminder->last_sent_at);
+        $this->assertNull($reminder->next_run_at);
+        $this->assertSame(Reminder::STATUS_COMPLETED, $reminder->status);
+        $this->assertSame(1, ReminderDelivery::query()->count());
+
+        Http::assertSentCount(1);
+        Http::assertSent(function (Request $request) use ($chat): bool {
+            $data = $request->data();
+            $text = (string) ($data['text'] ?? '');
+
+            return str_contains($request->url(), '/sendMessage')
+                && (int) $data['chat_id'] === $chat->telegram_chat_id
+                && str_contains($text, 'Пора закрыть окно.');
+        });
+    }
+
     public function test_it_stores_interval_schedule_timestamps_in_app_timezone(): void
     {
         config()->set('app.timezone', 'UTC');

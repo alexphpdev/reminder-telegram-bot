@@ -298,7 +298,7 @@ class ReminderDispatcher
             return null;
         }
 
-        return $this->toAppTimezone($nextRunAt);
+        return $nextRunAt !== null ? $this->toAppTimezone($nextRunAt) : null;
     }
 
     private function nextIntervalRun(Reminder $reminder, CarbonImmutable $currentDueTime, CarbonImmutable $referenceNow): ?CarbonImmutable
