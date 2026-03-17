@@ -10,10 +10,10 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_the_application_exposes_the_health_check_endpoint(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/up');
 
-        $response->assertStatus(200);
+        $response->assertOk();
     }
 }
