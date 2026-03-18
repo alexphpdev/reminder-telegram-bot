@@ -38,6 +38,7 @@ return [
     'telegram' => [
         'api_url' => env('TELEGRAM_API_URL', 'https://api.telegram.org'),
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'disable_send_to_telegram' => env('DISABLE_SEND_TO_TELEGRAM', false),
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
         'webhook_url' => env('TELEGRAM_WEBHOOK_URL'),
         'primary_chat_id' => env('TELEGRAM_PRIMARY_CHAT_ID'),

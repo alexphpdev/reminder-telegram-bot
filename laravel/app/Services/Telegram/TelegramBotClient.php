@@ -4,6 +4,7 @@ namespace App\Services\Telegram;
 
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class TelegramBotClient
@@ -95,6 +96,19 @@ class TelegramBotClient
 
     public function request(string $method, array $payload = [], int|float $timeout = 10): array
     {
+        if ($this->shouldDryRun($method)) {
+            $response = $this->dryRunResponse($method, $payload);
+
+            Log::channel('telegram-dev')->info('Telegram Bot API request skipped (dry-run).', [
+                'method' => $method,
+                'payload' => $payload,
+                'timeout' => $timeout,
+                'response' => $response,
+            ]);
+
+            return $response;
+        }
+
         $response = $this->client($timeout)->post($method, $payload);
 
         $response->throw();
@@ -106,6 +120,73 @@ class TelegramBotClient
         }
 
         return $data;
+    }
+
+    private function shouldDryRun(string $method): bool
+    {
+        if (! (bool) config('services.telegram.disable_send_to_telegram', false)) {
+            return false;
+        }
+
+        return in_array($method, [
+            'sendMessage',
+            'deleteMessage',
+            'editMessageReplyMarkup',
+            'editMessageText',
+            'answerCallbackQuery',
+        ], true);
+    }
+
+    private function dryRunResponse(string $method, array $payload): array
+    {
+        return match ($method) {
+            'sendMessage' => [
+                'ok' => true,
+                'dry_run' => true,
+                'result' => [
+                    'message_id' => $this->dryRunMessageId(),
+                    'date' => now()->timestamp,
+                    'chat' => [
+                        'id' => $payload['chat_id'] ?? null,
+                    ],
+                    'text' => $payload['text'] ?? '',
+                ],
+            ],
+            'editMessageText' => [
+                'ok' => true,
+                'dry_run' => true,
+                'result' => [
+                    'message_id' => $payload['message_id'] ?? $this->dryRunMessageId(),
+                    'date' => now()->timestamp,
+                    'chat' => [
+                        'id' => $payload['chat_id'] ?? null,
+                    ],
+                    'text' => $payload['text'] ?? '',
+                ],
+            ],
+            'editMessageReplyMarkup' => [
+                'ok' => true,
+                'dry_run' => true,
+                'result' => [
+                    'message_id' => $payload['message_id'] ?? $this->dryRunMessageId(),
+                    'date' => now()->timestamp,
+                    'chat' => [
+                        'id' => $payload['chat_id'] ?? null,
+                    ],
+                    'reply_markup' => $payload['reply_markup'] ?? ['inline_keyboard' => []],
+                ],
+            ],
+            default => [
+                'ok' => true,
+                'dry_run' => true,
+                'result' => true,
+            ],
+        };
+    }
+
+    private function dryRunMessageId(): int
+    {
+        return random_int(100000000, 999999999);
     }
 
     private function client(int|float $timeout = 10): PendingRequest
