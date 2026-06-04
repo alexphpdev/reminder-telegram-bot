@@ -14,6 +14,7 @@ services:
       - caddy_config:/config
     depends_on:
       - app
+      - frontend
     networks:
       - app-net
       - proxy-net
@@ -26,6 +27,20 @@ services:
     volumes:
       - ./laravel:/var/www
       - ./database:/var/lib/reminder-bot/sqlite
+    networks:
+      - app-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: app-frontend
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+    expose:
+      - "3000"
     networks:
       - app-net
 

@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+:root {
+	color-scheme: light;
+	font-family: 'Space Grotesk', 'Avenir Next', 'Helvetica Neue', sans-serif;
+	background:
+		radial-gradient(circle at top, rgba(221, 186, 141, 0.34), transparent 38%),
+		linear-gradient(180deg, #fff7ec 0%, #f8f1e6 45%, #efe4d3 100%);
+}
+
+body {
+	min-height: 100vh;
+	background: transparent;
+	color: #1c1917;
+}
+
+@layer components {
+	.surface-card {
+		@apply rounded-[2rem] border border-stone-200/80 bg-white/72 shadow-[0_24px_70px_rgba(146,113,75,0.18)] backdrop-blur;
+	}
+
+	.eyebrow {
+		@apply text-xs font-semibold uppercase tracking-[0.32em] text-stone-500;
+	}
+
+	.status-chip {
+		@apply rounded-[1.4rem] border border-stone-200 bg-white/70 px-4 py-3 shadow-[0_10px_25px_rgba(120,98,67,0.1)];
+	}
+
+	.status-label {
+		@apply mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-stone-500;
+	}
+
+	.admin-shell {
+		@apply mx-auto flex max-w-6xl flex-col gap-5;
+	}
+
+	.nav-chip {
+		@apply inline-flex items-center rounded-full border border-stone-200 bg-white/75 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-300 hover:bg-white;
+	}
+
+	.nav-chip-active {
+		@apply border-stone-900 bg-stone-900 text-stone-50 hover:border-stone-900 hover:bg-stone-900;
+	}
+
+	.filter-chip {
+		@apply inline-flex items-center rounded-full border border-stone-300 bg-white/85 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-white;
+	}
+
+	.filter-chip-active {
+		@apply border-amber-700 bg-amber-700 text-amber-50 hover:border-amber-700 hover:bg-amber-700;
+	}
+
+	.metric-card {
+		@apply rounded-[1.6rem] border border-stone-200 bg-white/80 px-4 py-4 shadow-[0_12px_30px_rgba(120,98,67,0.09)];
+	}
+
+	.metric-label {
+		@apply mb-2 block text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-stone-500;
+	}
+
+	.metric-note {
+		@apply mt-1 block text-xs leading-5 text-stone-500;
+	}
+
+	.form-grid {
+		@apply grid gap-4 md:grid-cols-2;
+	}
+
+	.form-field {
+		@apply flex flex-col gap-2;
+	}
+
+	.field-label {
+		@apply text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-stone-500;
+	}
+
+	.field-input {
+		@apply rounded-[1.35rem] border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-400 focus:bg-white;
+	}
+
+	.field-input-textarea {
+		@apply min-h-36 resize-y;
+	}
+
+	.field-help {
+		@apply text-xs leading-5 text-stone-500;
+	}
+
+	.field-error {
+		@apply text-sm leading-6 text-rose-900;
+	}
+
+	.checkbox-card {
+		@apply flex items-start gap-3 rounded-[1.6rem] border border-stone-200 bg-white/80 px-4 py-4 shadow-[0_12px_30px_rgba(120,98,67,0.09)];
+	}
+
+	.action-button {
+		@apply inline-flex items-center justify-center rounded-full border border-stone-900 bg-stone-900 px-5 py-3 text-sm font-semibold text-stone-50 transition hover:border-stone-800 hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.action-button-secondary {
+		@apply border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:bg-white;
+	}
+
+	.action-button-danger {
+		@apply border-rose-700 bg-rose-700 text-rose-50 hover:border-rose-800 hover:bg-rose-800;
+	}
+
+	.status-pill {
+		@apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-[0.12em] uppercase;
+	}
+
+	.status-pill-active {
+		@apply bg-emerald-100 text-emerald-900;
+	}
+
+	.status-pill-paused {
+		@apply bg-amber-100 text-amber-900;
+	}
+
+	.status-pill-completed {
+		@apply bg-stone-200 text-stone-700;
+	}
+
+	.status-pill-neutral {
+		@apply bg-white/80 text-stone-700 ring-1 ring-stone-200;
+	}
+}

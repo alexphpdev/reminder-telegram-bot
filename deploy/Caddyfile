@@ -1,25 +1,33 @@
 # Local development entrypoint (http://localhost:8080).
 :80 {
+	@laravel path /api /api/* /up
+	@admin_auth path /admin /admin/* /api/admin /api/admin/*
 
-    # Serve Laravel public directory
-    root * /var/www/public
+	basic_auth @admin_auth {
+		admin $2a$14$OEXDitJf03fxRoGNjh7eCeOIHblxlVGERdFdrgZ3tA9SIm7XvE/Va
+	}
 
-    # PHP-FPM via FastCGI
-    php_fastcgi app:9000
+	handle @laravel {
+		# Serve Laravel API and health routes directly via PHP-FPM.
+		root * /var/www/public
+		php_fastcgi app:9000
+		file_server
+	}
 
-    # Static files
-    file_server
+	handle {
+		reverse_proxy frontend:3000
+	}
 
-    # Basic security headers
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy no-referrer
-    }
+	# Basic security headers
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+	}
 
-    # Logs to stdout in JSON (nice for Docker logs)
-    log {
-        output stdout
-        format json
-    }
+	# Logs to stdout in JSON (nice for Docker logs)
+	log {
+		output stdout
+		format json
+	}
 }

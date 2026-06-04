@@ -16,6 +16,13 @@ class RemindersDispatchDueCommandTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('services.telegram.disable_send_to_telegram', false);
+    }
+
     public function test_it_sends_due_reminders_and_updates_delivery_state(): void
     {
         config()->set('services.telegram.bot_token', 'test-token');

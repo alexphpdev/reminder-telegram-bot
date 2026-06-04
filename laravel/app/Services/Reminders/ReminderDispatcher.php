@@ -7,7 +7,6 @@ use App\Models\ReminderDelivery;
 use App\Models\TelegramChat;
 use App\Services\Telegram\TelegramBotClient;
 use Carbon\CarbonImmutable;
-use Cron\CronExpression;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 use Throwable;
@@ -16,6 +15,7 @@ class ReminderDispatcher
 {
     public function __construct(
         private readonly TelegramBotClient $telegramBotClient,
+        private readonly ReminderScheduleService $reminderScheduleService,
     ) {
     }
 
@@ -124,7 +124,7 @@ class ReminderDispatcher
                 'status' => $reminder->next_run_at === null ? Reminder::STATUS_COMPLETED : Reminder::STATUS_ACTIVE,
             ])->save();
         } else {
-            $nextRunAt = $this->calculateNextRunAt($reminder, $now);
+            $nextRunAt = $this->reminderScheduleService->nextRunAt($reminder, $now);
 
             $reminder->forceFill([
                 'last_sent_at' => $this->toAppTimezone($now),
@@ -277,67 +277,6 @@ class ReminderDispatcher
         ];
     }
 
-    private function calculateNextRunAt(Reminder $reminder, CarbonImmutable $now): ?CarbonImmutable
-    {
-        $timezone = $this->reminderTimezone($reminder);
-        $currentDueTime = CarbonImmutable::instance($reminder->next_run_at ?? $now)->setTimezone($timezone);
-        $referenceNow = $now->setTimezone($timezone);
-
-        $nextRunAt = match ($reminder->schedule_type) {
-            Reminder::SCHEDULE_ONCE => null,
-            Reminder::SCHEDULE_INTERVAL => $this->nextIntervalRun($reminder, $currentDueTime, $referenceNow),
-            Reminder::SCHEDULE_CRON => $this->nextCronRun($reminder, $currentDueTime, $referenceNow),
-            default => null,
-        };
-
-        if (
-            $nextRunAt !== null
-            && $reminder->ends_at !== null
-            && $nextRunAt->greaterThan(CarbonImmutable::instance($reminder->ends_at)->setTimezone($timezone))
-        ) {
-            return null;
-        }
-
-        return $nextRunAt !== null ? $this->toAppTimezone($nextRunAt) : null;
-    }
-
-    private function nextIntervalRun(Reminder $reminder, CarbonImmutable $currentDueTime, CarbonImmutable $referenceNow): ?CarbonImmutable
-    {
-        if ($reminder->interval_minutes === null || $reminder->interval_minutes < 1) {
-            return null;
-        }
-
-        $nextRunAt = $currentDueTime;
-
-        do {
-            $nextRunAt = $nextRunAt->addMinutes($reminder->interval_minutes);
-        } while ($nextRunAt->lessThanOrEqualTo($referenceNow));
-
-        return $nextRunAt;
-    }
-
-    private function nextCronRun(Reminder $reminder, CarbonImmutable $currentDueTime, CarbonImmutable $referenceNow): ?CarbonImmutable
-    {
-        if ($reminder->cron_expression === null || $reminder->cron_expression === '') {
-            return null;
-        }
-
-        $cronExpression = new CronExpression($reminder->cron_expression);
-        $timezone = $this->reminderTimezone($reminder);
-
-        $nextRunAt = CarbonImmutable::instance(
-            $cronExpression->getNextRunDate($currentDueTime, 0, false, $timezone),
-        );
-
-        while ($nextRunAt->lessThanOrEqualTo($referenceNow)) {
-            $nextRunAt = CarbonImmutable::instance(
-                $cronExpression->getNextRunDate($nextRunAt, 0, false, $timezone),
-            );
-        }
-
-        return $nextRunAt;
-    }
-
     private function deleteDeliveryMessage(ReminderDelivery $delivery, Reminder $reminder): array
     {
         if ($delivery->telegram_message_id === null) {
@@ -379,13 +318,6 @@ class ReminderDispatcher
         }
 
         return $timeout;
-    }
-
-    private function reminderTimezone(Reminder $reminder): string
-    {
-        $timezone = trim((string) $reminder->timezone);
-
-        return $timezone !== '' ? $timezone : $this->appTimezone();
     }
 
     private function toAppTimezone(CarbonImmutable $value): CarbonImmutable
